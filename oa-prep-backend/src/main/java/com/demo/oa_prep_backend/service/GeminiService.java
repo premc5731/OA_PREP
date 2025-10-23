@@ -56,6 +56,33 @@ public class GeminiService {
                 .onErrorMap(e -> new RuntimeException("Failed to call Gemini API", e));
     }
 
-    
+    private String buildPrompt(String topic, int count) {
+        return String.format(
+                "Generate %d multiple-choice questions about %s. " +
+                        "For each question, provide: " +
+                        "1. The question text. " +
+                        "2. An array of 4 options. " +
+                        "3. The zero-based index of the correct answer. " +
+                        "Return the result *only* as a valid JSON array of objects. " +
+                        "Each object in the array must have these exact keys: " +
+                        "\"questionText\" (string), \"options\" (array of 4 strings), \"correctAnswerIndex\" (number). " +
+                        "Do not include any other text, explanations, or markdown formatting outside of the JSON array.",
+                count, topic
+        );
+    }
+
+    private Mono<List<Question>> extractAndParseQuestions(JsonNode responseNode) {
+        try {
+            String textResponse = responseNode
+                    .path("candidates").get(0)
+                    .path("content").path("parts").get(0)
+                    .path("text").asText();
+
+            List<Question> questions = objectMapper.readValue(textResponse, new TypeReference<>() {});
+            return Mono.just(questions);
+        } catch (JsonProcessingException | NullPointerException e) {
+            return Mono.error(new RuntimeException("Failed to parse questions from Gemini response.", e));
+        }
+    }
 }
 
