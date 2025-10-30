@@ -41,5 +41,9 @@ public class McqController {
                     return Mono.just(ResponseEntity.status(500).build());
                 });
     }
+    @GetMapping("/check")
+    public String generateMcqs(@RequestBody McqRequest request) {
+        return "every thing is ok";
+    }
 }
 
